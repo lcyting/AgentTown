@@ -31,7 +31,7 @@ todos:
 
 | 能力 | 状态 | 位置 |
 |------|------|------|
-| EmotionManager | ✅ | `backend/emotion_manager.py` |
+| EmotionManager | ✅ | `backend/emotion_manager.py`（支持 YAML `baselines.emotion` 默认基线） |
 | 合并分析 emotion | ✅ | `backend/relationship_manager.py` |
 | chat 注入 + 更新 | ✅ | `backend/agents.py` |
 | REST API | ✅ | `main.py`：`GET/PUT .../emotion`，`GET /emotions` |
@@ -40,9 +40,14 @@ todos:
 | Godot UI | ✅ | `dialogue_ui.gd` → `EmotionLabel` |
 | pytest | ✅ | `tests/test_emotion_*.py`, `test_analyzer_parse.py` |
 
+**配置（已实现）：**
+
+- 每名 NPC 的首次见面默认情绪：`backend/npc_config/npcs.yaml` → `baselines.emotion`
+- 运行时变化仍仅存内存；重启后新 `player_id` 使用 YAML 基线
+
 **未实现（原计划已排除或遗留）：**
 
-- 情绪 / 好感持久化到磁盘（重启归零）
+- 情绪 / 好感运行时变化持久化到磁盘（重启后丢失当次变化，基线从 YAML 读取）
 - 头顶批量台词携带情绪（`batch_generator` 未读 EmotionManager）
 - NPC 精灵按情绪换肤或动画
 - `scripts/smoke_emotion.py`（可选冒烟脚本，仓库未包含）

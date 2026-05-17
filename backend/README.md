@@ -6,11 +6,12 @@
 
 | 模块 | 说明 |
 |------|------|
+| **NPC YAML 配置** | `npc_config/npcs.yaml`：人格、初始记忆、情绪/好感基线、环境台词 |
 | 实时对话 | `POST /chat`，注入记忆 + 好感 + 情绪上下文 |
-| 批量头顶台词 | 每 30s 按场景 `office`/`cafe`/`library` 各调一次 LLM（或预设） |
-| 记忆 | 工作记忆 + 可选情景记忆（Qdrant） |
-| 好感度 | LLM 分析，5 级关系，内存存储 |
-| 情绪 | 与好感同次分析，5 种情绪，内存存储 |
+| 批量头顶台词 | 每 30s 按场景 `office`/`cafe`/`library` 各调一次 LLM（或 YAML 预设） |
+| 记忆 | 工作记忆 + 可选情景记忆（Qdrant）；支持 YAML 初始记忆种子 |
+| 好感度 | LLM 分析，5 级关系，内存存储；首次见面默认来自 YAML `baselines.affinity` |
+| 情绪 | 与好感同次分析，5 种情绪，内存存储；首次默认来自 YAML `baselines.emotion` |
 | 对话历史 | 从记忆整理 `dialogue-history` |
 | 日志 | `logger.py` → `logs/dialogue_*.log` |
 
@@ -55,6 +56,7 @@ python -m pytest tests/ -v
 | `tests/test_emotion_manager.py` | EmotionManager 单元测试 |
 | `tests/test_emotion_api.py` | 情绪与 chat 路由（mock） |
 | `tests/test_analyzer_parse.py` | 好感/情绪 JSON 解析 |
+| `tests/test_npc_config_loader.py` | YAML 加载、基线、记忆种子 |
 
 > 仓库中**无** `test_api.py`；请使用 pytest 或 Swagger。
 
@@ -90,6 +92,7 @@ backend/
 ├── main.py
 ├── config.py
 ├── models.py
+├── npc_config_loader.py  # YAML 加载与 Pydantic 校验
 ├── agents.py
 ├── relationship_manager.py
 ├── emotion_manager.py
@@ -97,6 +100,9 @@ backend/
 ├── state_manager.py
 ├── logger.py
 ├── view_logs.py
+├── npc_config/
+│   ├── npcs.yaml         # NPC 行为唯一数据源（人格/记忆/基线/环境台词）
+│   └── npcs.example.yaml # 带注释的编辑模板
 ├── memory_data/          # 运行时生成
 ├── logs/                 # 对话日志
 ├── tests/
@@ -113,7 +119,31 @@ backend/
 | `LLM_MODEL_ID` | Qwen2.5-72B-Instruct | 模型 |
 | `LLM_BASE_URL` | ModelScope API | OpenAI 兼容地址 |
 | `NPC_UPDATE_INTERVAL` | 30（代码内） | 头顶台词刷新间隔 |
+| `NPC_CONFIG_PATH` | `npc_config/npcs.yaml` | NPC 行为 YAML 路径 |
+| `NPC_MEMORY_FORCE_RESEED` | — | 设为 `1` 时启动强制重写 `initial_memories` |
 | `QDRANT_*` | 见 .env.example | 情景记忆（可选） |
+
+## NPC 行为配置（YAML）
+
+非技术人员可通过编辑 [`npc_config/npcs.yaml`](npc_config/npcs.yaml) 调整 NPC，**无需改 Python**。模板与字段说明见 [`npc_config/npcs.example.yaml`](npc_config/npcs.example.yaml)。
+
+| 配置块 | 作用 |
+|--------|------|
+| `personality` / `expertise` / `style` / `hobbies` | 写入 system prompt，决定对话人设 |
+| `scene_id` / `title` / `location` / `activity` 等 | 场景元数据与 prompt 上下文 |
+| `baselines.emotion` | 首次见面默认情绪：`happy` / `sad` / `angry` / `excited` / `neutral` |
+| `baselines.affinity` | 首次见面默认好感度（0–100） |
+| `initial_memories` | 开局记忆；**仅该 NPC 记忆库为空时**在启动时写入 |
+| `ambient_dialogues` | LLM 不可用时的头顶预设台词（`morning` / `noon` / `afternoon` / `evening`） |
+
+**修改后需重启后端。** 生效说明：
+
+- 改 `personality` 等：重启即可
+- 改 `initial_memories`：先 `DELETE /npcs/{名}/memories` 或删除 `memory_data/{名}/`，再重启；或设 `NPC_MEMORY_FORCE_RESEED=1`
+- 改 `baselines`：重启后对新 `player_id` 的首次查询生效（已有会话仍用内存中的值）
+- 校验失败时服务**拒绝启动**，终端会打印中文字段路径错误
+
+加载逻辑见 `npc_config_loader.py`；`agents.py` 在启动时调用 `get_npc_roles()`，`batch_generator` 读取 `ambient_dialogues`。
 
 ## 批量台词设计
 
@@ -129,16 +159,19 @@ backend/
 
 ## 开发提示
 
-- 新 NPC：在 `agents.py` 的 `NPC_ROLES` 与 `batch_generator.preset_dialogues` 中添加，Godot `npc_name` 与键名一致
-- 自定义人设：修改 `create_system_prompt`
-- 批量 prompt：`batch_generator._build_batch_prompt`
+- **新 NPC**：在 `npc_config/npcs.yaml` 的 `npcs` 下添加条目，并在 `ambient_dialogues` 四个时段各写一句；Godot 场景 `npc_name` 与 YAML 键名一致；`config.gd` 补充 `NPC_TITLES` / `NPC_WORLD_NAMES`（UI 展示）
+- **自定义人设**：编辑 YAML 中 `personality`、`style`、`hobbies` 等
+- **程序化扩展**：`npc_config_loader.load_npc_config()` / `get_npc_roles()`
+- 批量 prompt 仍由 `batch_generator._build_batch_prompt` 从已加载角色生成
 
 ## 故障排查
 
 | 现象 | 处理 |
 |------|------|
-| 未设置 LLM_API_KEY | 警告 + 预设/模拟模式 |
+| 启动报「NPC 配置文件」错误 | 检查 `npcs.yaml` 语法与必填字段；对照 `npcs.example.yaml` |
+| 未设置 LLM_API_KEY | 警告 + YAML 预设头顶台词 / 模拟对话 |
 | 情景记忆不可用 | 安装 qdrant-client，配置 QDRANT；或接受仅工作记忆 |
+| 改了 initial_memories 没生效 | 记忆库非空会跳过种子；清空记忆或 `NPC_MEMORY_FORCE_RESEED=1` |
 | CORS | `config.py` 中 `CORS_ORIGINS` |
 
 ## 许可证

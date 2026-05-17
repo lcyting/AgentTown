@@ -1,0 +1,29 @@
+version: 1
+npcs:
+  测试员:
+    scene_id: office
+    world_name: 测试区
+    title: 测试职位
+    location: 测试点
+    activity: 测试活动
+    interaction_hint: 按 T 测试
+    personality: 冷静
+    expertise: 测试
+    style: 简短
+    hobbies: 写测试
+    baselines:
+      emotion: happy
+      affinity: 70
+    initial_memories:
+      - content: 这是一条种子记忆
+        type: working
+        importance: 0.8
+ambient_dialogues:
+  morning:
+    测试员: 早安测试
+  noon:
+    测试员: 午安测试
+  afternoon:
+    测试员: 下午测试
+  evening:
+    测试员: 晚安测试

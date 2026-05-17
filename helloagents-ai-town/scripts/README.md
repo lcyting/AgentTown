@@ -29,6 +29,8 @@ const AFFINITY_LEVEL_COLORS = { ... }
 
 修改后端地址时只改 `API_BASE_URL`。
 
+NPC 人格、记忆种子、情绪/好感基线、头顶预设台词由后端 [`backend/npc_config/npcs.yaml`](../../backend/npc_config/npcs.yaml) 配置；`NPC_TITLES` / `NPC_WORLD_NAMES` 仅用于对话 UI 展示，键名须与 YAML 及场景 `npc_name` 一致。
+
 ---
 
 ## api_client.gd
@@ -87,7 +89,7 @@ NPC 名含中文时使用 `uri_encode()` 拼路径。
 ## player.gd / npc.gd
 
 - 玩家：**WASD**，**E** 与范围内 NPC 交互
-- NPC：`@export npc_name`（须与后端 `NPC_ROLES` 键一致）、`interaction_hint_text`
+- NPC：`@export npc_name`（须与后端 `npc_config/npcs.yaml` 中键名一致）、`interaction_hint_text`
 
 ---
 
@@ -116,9 +118,11 @@ player E 键 → dialogue_ui.start_dialogue
 
 ## 添加新 NPC
 
-1. 在目标 `.tscn` 的 `NPCs` 下实例化 `npc.tscn`，设置 `npc_name`
-2. 在 `backend/agents.py` 的 `NPC_ROLES` 注册（含 `scene_id`）
-3. 在 `batch_generator.preset_dialogues` 增加预设台词
+1. 在 [`backend/npc_config/npcs.yaml`](../../backend/npc_config/npcs.yaml) 添加 `npcs` 条目（含 `scene_id`、`personality`、`baselines`、`initial_memories`）
+2. 在同一文件的 `ambient_dialogues` 下为 `morning` / `noon` / `afternoon` / `evening` 各写一句预设头顶台词
+3. 在目标 `.tscn` 的 `NPCs` 下实例化 `npc.tscn`，`npc_name` 与 YAML 键名**完全一致**
+4. 在 `config.gd` 补充 `NPC_TITLES`、`NPC_WORLD_NAMES`（对话 UI 展示用）
+5. 重启后端
 
 ---
 

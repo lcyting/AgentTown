@@ -4,7 +4,7 @@
 
 赛博小镇 NPC 拥有**好感度系统**：根据与玩家的对话自动调整好感度，影响后续回复风格。好感度分析与**情绪**在同一次 LLM 调用中完成（见 `relationship_manager.py`），避免额外 API 费用。
 
-**存储说明：** 好感度保存在 `RelationshipManager` 内存中，**服务重启后恢复为默认 50**；与记忆文件目录独立。
+**存储说明：** 好感度保存在 `RelationshipManager` 内存中；**服务重启后**按 [`backend/npc_config/npcs.yaml`](backend/npc_config/npcs.yaml) 中 `baselines.affinity` 作为首次见面默认值（未配置则为 50）。与记忆文件目录独立。
 
 ---
 
@@ -28,7 +28,7 @@
 |------|----------|----------|
 | 陌生 | 0～20 | 冷淡疏离 |
 | 熟悉 | 20～40 | 礼貌略生疏 |
-| 友好 | 40～60 | 正常交流（默认约 50） |
+| 友好 | 40～60 | 正常交流（YAML 默认基线常为 50） |
 | 亲密 | 60～80 | 更热情、愿多聊 |
 | 挚友 | 80～100 | 像老朋友一样亲切 |
 
@@ -70,6 +70,7 @@
 
 ```
 RelationshipManager (relationship_manager.py)
+├── default_affinities: 来自 npc_config/npcs.yaml baselines
 ├── affinity_scores: Dict[npc][player_id] -> float
 ├── analyzer_agent: SimpleAgent
 ├── get_affinity / analyze_and_update_affinity
@@ -212,11 +213,14 @@ python view_logs.py tail
 对话过中性、分析判定不调整，或 LLM 未配置导致走模拟逻辑。
 
 **Q：重启后好感度丢失？**  
-当前为内存实现，属预期行为。
+对话过程中变化的好感存在内存里，重启后会丢失；新会话的**起始值**由 YAML `baselines.affinity` 决定。若需固定开局好感，编辑 `npc_config/npcs.yaml` 后重启。
+
+**Q：如何设置某 NPC 开局好感更高？**  
+在 `npcs.yaml` 对应角色下设置 `baselines.affinity`（如 `70`），重启后端。
 
 **Q：Godot 没显示好感度？**  
 确认后端运行且 `API_BASE_URL` 正确；打开对话框时应请求 affinity 接口。
 
 ---
 
-**版本说明：** 文档已与 `relationship_manager.py`、`agents.py`、`dialogue_ui.gd` 实现对齐（5 名 NPC，多场景）。
+**版本说明：** 文档已与 `relationship_manager.py`、`agents.py`、`npc_config/npcs.yaml`、`dialogue_ui.gd` 实现对齐（5 名 NPC，多场景）。

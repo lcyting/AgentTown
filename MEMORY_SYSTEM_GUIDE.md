@@ -5,7 +5,8 @@
 每个 NPC 拥有独立的 **MemoryManager**（HelloAgents），在对话时检索相关记忆并写入新记忆，使 NPC 能引用近期或语义相关的历史内容。
 
 **存储路径：** `backend/memory_data/{NPC名}/`（如 `程码/`）。  
-**可选：** 配置 Qdrant 后启用情景记忆的向量检索；失败时自动**仅工作记忆**。
+**可选：** 配置 Qdrant 后启用情景记忆的向量检索；失败时自动**仅工作记忆**。  
+**配置种子：** 在 [`backend/npc_config/npcs.yaml`](backend/npc_config/npcs.yaml) 的 `initial_memories` 中定义开局记忆，启动时若该 NPC 记忆库为空则自动写入。
 
 ---
 
@@ -30,6 +31,21 @@
 - NPC 之间不共享记忆
 - `player_id` 写入 metadata（默认 `"player"`）
 
+### 4. 初始记忆（YAML 配置）
+
+在 `npc_config/npcs.yaml` 中为每名 NPC 配置 `initial_memories`：
+
+```yaml
+initial_memories:
+  - content: 最近在优化多智能体系统的性能
+    type: episodic      # working | episodic
+    importance: 0.6     # 0.0–1.0
+```
+
+- **写入时机：** `NPCAgentManager` 创建记忆管理器后，若 working + episodic 总数为 0 则种子写入
+- **metadata：** `source: config_seed`
+- **更新配置后：** 删除 `memory_data/{NPC名}/` 或 `DELETE /npcs/{名}/memories`，或设置环境变量 `NPC_MEMORY_FORCE_RESEED=1` 后重启
+
 ---
 
 ## 使用示例
@@ -50,6 +66,10 @@
 ## 技术实现
 
 ### 流程（`agents.py` → `chat()`）
+
+**启动时：** `_create_memory_manager()` → `_seed_initial_memories()`（空库时，来自 YAML）
+
+**每轮对话：**
 
 1. `retrieve_memories(query, ["working", "episodic"], limit=5, min_importance=0.3)`
 2. `_build_memory_context()` 拼入 prompt
@@ -184,10 +204,13 @@ Qdrant 未配置或连接失败时会打印回退提示。
 **Q：占用空间大？**  
 降低 `episodic_memory_capacity` 或 `DELETE` 清空；勿提交 `memory_data/` 到公开仓库。
 
+**Q：改了 YAML 里的 initial_memories 没变化？**  
+种子仅在记忆库为空时执行；先清空记忆再重启，或使用 `NPC_MEMORY_FORCE_RESEED=1`。
+
 ---
 
 ## 相关文档
 
 - [AFFINITY_SYSTEM_GUIDE.md](AFFINITY_SYSTEM_GUIDE.md)
 - [DIALOGUE_LOG_GUIDE.md](DIALOGUE_LOG_GUIDE.md)
-- [backend/README.md](backend/README.md)
+- [backend/README.md](backend/README.md)（NPC YAML 配置说明）

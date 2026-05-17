@@ -15,13 +15,19 @@ class RelationshipManager:
     - 提供好感度等级和修饰词
     """
     
-    def __init__(self, llm: HelloAgentsLLM):
+    def __init__(
+        self,
+        llm: HelloAgentsLLM,
+        default_affinities: Optional[Dict[str, float]] = None,
+    ):
         """初始化好感度管理器
         
         Args:
             llm: HelloAgentsLLM实例
+            default_affinities: 各 NPC 首次见面默认好感度
         """
         self.llm = llm
+        self.default_affinities: Dict[str, float] = default_affinities or {}
         
         # 存储每个NPC与玩家的好感度
         # 格式: {npc_name: {player_id: affinity_score}}
@@ -117,7 +123,9 @@ NPC: "当然可以!我很乐意分享。"
             self.affinity_scores[npc_name] = {}
         
         if player_id not in self.affinity_scores[npc_name]:
-            self.affinity_scores[npc_name][player_id] = 50.0  # 初始好感度50
+            self.affinity_scores[npc_name][player_id] = self.default_affinities.get(
+                npc_name, 50.0
+            )
         
         return self.affinity_scores[npc_name][player_id]
     

@@ -6,6 +6,7 @@ from typing import Dict, Optional
 
 from hello_agents import HelloAgentsLLM
 from agents import NPC_ROLES, npc_names_for_scene
+from npc_config_loader import get_ambient_dialogues
 
 class NPCBatchGenerator:
     """批量生成NPC对话的生成器
@@ -28,38 +29,18 @@ class NPCBatchGenerator:
             self.enabled = False
         
         self.npc_configs = NPC_ROLES
-        
-        # 预设对话库(当LLM不可用时使用)
-        self.preset_dialogues = {
-            "morning": {
-                "程码": "早上好!今天要继续优化那个多智能体系统的性能。",
-                "林案": "新的一天开始了,先整理一下今天的会议安排。",
-                "苏绘": "早!先来杯咖啡提提神,然后开始设计新界面。",
-                "小林": "早安,今天的埃塞俄比亚豆香气很明亮,要不要来一杯?",
-                "陈读": "图书馆刚开门,我把新到的科幻区图书摆上书架了。",
-            },
-            "noon": {
-                "程码": "写了一上午代码,终于把那个bug修复了!",
-                "林案": "上午的需求评审会很顺利,下午继续推进。",
-                "苏绘": "这个配色方案看起来不错,再调整一下细节。",
-                "小林": "午餐高峰快到了,特调拿铁已经备好,欢迎来坐坐。",
-                "陈读": "午休时分最安静,适合在窗边读一会儿书。",
-            },
-            "afternoon": {
-                "程码": "下午继续写代码,这个算法还需要优化一下。",
-                "林案": "正在准备下周的产品规划会,需求文档快完成了。",
-                "苏绘": "设计稿基本完成了,等会儿发给大家看看。",
-                "小林": "午后阳光斜进吧台,正好试试新的冰滴萃取。",
-                "陈读": "有几位读者来咨询推荐,我列了一份本周书单。",
-            },
-            "evening": {
-                "程码": "今天的代码提交完成,明天继续!",
-                "林案": "今天的工作差不多了,整理一下明天的待办事项。",
-                "苏绘": "设计工作告一段落,明天再继续优化。",
-                "小林": "打烊前最后一炉豆子烘好了,明天见。",
-                "陈读": "闭馆前把借阅台整理好,明天继续为大家荐书。",
-            },
-        }
+        self.preset_dialogues = get_ambient_dialogues()
+        self._validate_ambient_dialogues()
+
+    def _validate_ambient_dialogues(self) -> None:
+        all_names = set(NPC_ROLES.keys())
+        for period, dialogues in self.preset_dialogues.items():
+            missing = all_names - set(dialogues.keys())
+            if missing:
+                print(
+                    f"⚠️  ambient_dialogues.{period} 缺少 NPC: "
+                    + ", ".join(sorted(missing))
+                )
     
     def generate_batch_dialogues(
         self, context: Optional[str] = None, scene_id: Optional[str] = None
@@ -203,9 +184,17 @@ class NPCBatchGenerator:
         else:
             period = "evening"
         
-        all_dialogues = self.preset_dialogues.get(period, self.preset_dialogues["morning"])
+        period_dialogues = self.preset_dialogues.get(period) or self.preset_dialogues.get(
+            "morning", {}
+        )
         names = npc_names_for_scene(scene_id)
-        return {name: all_dialogues[name] for name in names if name in all_dialogues}
+        result = {}
+        for name in names:
+            if name in period_dialogues:
+                result[name] = period_dialogues[name]
+            else:
+                print(f"⚠️  {name} 在 ambient_dialogues.{period} 中无预设台词，已跳过")
+        return result
 
 # 全局单例
 _batch_generator = None

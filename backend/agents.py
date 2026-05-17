@@ -8,6 +8,13 @@ from typing import Dict, List, Optional
 from datetime import datetime
 from relationship_manager import RelationshipManager
 from emotion_manager import EmotionManager
+from npc_config_loader import (
+    get_default_affinities,
+    get_default_emotions,
+    get_initial_memories,
+    get_npc_roles,
+    InitialMemoryItem,
+)
 from logger import (
     log_dialogue_start, log_affinity, log_memory_retrieval,
     log_generating_response, log_npc_response, log_analyzing_affinity,
@@ -15,69 +22,15 @@ from logger import (
     log_emotion, log_emotion_change
 )
 
-# NPC角色配置
-NPC_ROLES = {
-    "程码": {
-        "scene_id": "office",
-        "world_name": "赛博小镇办公室",
-        "title": "Python工程师",
-        "location": "工位区",
-        "activity": "写代码",
-        "interaction_hint": "按 E 交互",
-        "personality": "技术宅,喜欢讨论算法和框架",
-        "expertise": "多智能体系统、HelloAgents框架、Python开发、代码优化",
-        "style": "简洁专业,喜欢用技术术语,偶尔吐槽bug",
-        "hobbies": "看技术博客、刷LeetCode、研究新框架",
-    },
-    "林案": {
-        "scene_id": "office",
-        "world_name": "赛博小镇办公室",
-        "title": "产品经理",
-        "location": "会议室",
-        "activity": "整理需求",
-        "interaction_hint": "按 E 交互",
-        "personality": "外向健谈,善于沟通协调",
-        "expertise": "需求分析、产品规划、用户体验、项目管理",
-        "style": "友好热情,善于引导对话,喜欢用比喻",
-        "hobbies": "看产品分析、研究竞品、思考用户需求",
-    },
-    "苏绘": {
-        "scene_id": "office",
-        "world_name": "赛博小镇办公室",
-        "title": "UI设计师",
-        "location": "休息区",
-        "activity": "喝咖啡",
-        "interaction_hint": "按 E 交互",
-        "personality": "细腻敏感,注重美感",
-        "expertise": "界面设计、交互设计、视觉呈现、用户体验",
-        "style": "优雅简洁,喜欢用艺术化的表达,追求完美",
-        "hobbies": "看设计作品、逛Dribbble、品咖啡",
-    },
-    "小林": {
-        "scene_id": "cafe",
-        "world_name": "赛博小镇咖啡厅",
-        "title": "咖啡师",
-        "location": "吧台",
-        "activity": "手冲咖啡",
-        "interaction_hint": "按 E 点一杯咖啡",
-        "personality": "温和细致,对咖啡有执念",
-        "expertise": "手冲咖啡、拉花、咖啡豆品鉴、轻食搭配",
-        "style": "轻声细语,喜欢用香气和口感形容,偶尔推荐今日特调",
-        "hobbies": "研究新豆种、逛咖啡展、记录萃取参数",
-    },
-    "陈读": {
-        "scene_id": "library",
-        "world_name": "赛博小镇图书馆",
-        "title": "图书管理员",
-        "location": "服务台",
-        "activity": "整理书架",
-        "interaction_hint": "按 E 借阅咨询",
-        "personality": "安静博学,乐于荐书",
-        "expertise": "图书分类、阅读推荐、资料检索、小镇文史",
-        "style": "沉稳克制,爱引用书中句子,说话有条理",
-        "hobbies": "阅读科幻与心理学、编写导读卡片、维护小镇档案",
-    },
-}
+def _load_npc_roles() -> Dict[str, Dict[str, str]]:
+    try:
+        return get_npc_roles()
+    except ValueError as e:
+        print(f"❌ NPC 配置加载失败: {e}")
+        raise
+
+
+NPC_ROLES = _load_npc_roles()
 
 
 def npc_names_for_scene(scene_id: Optional[str] = None) -> List[str]:
@@ -149,9 +102,15 @@ class NPCAgentManager:
 
         # 初始化好感度和情绪管理器
         if self.llm:
-            self.relationship_manager = RelationshipManager(self.llm)
-            self.emotion_manager = EmotionManager()
+            self.relationship_manager = RelationshipManager(
+                self.llm,
+                default_affinities=get_default_affinities(),
+            )
+            self.emotion_manager = EmotionManager(
+                default_emotions=get_default_emotions(),
+            )
 
+        self._initial_memories_config = get_initial_memories()
         self._create_agents()
     
     def _create_agents(self):
@@ -173,7 +132,12 @@ class NPCAgentManager:
                 continue
 
             try:
-                self.memories[name] = self._create_memory_manager(name)
+                memory_manager = self._create_memory_manager(name)
+                self.memories[name] = memory_manager
+                if memory_manager:
+                    seed_items = self._initial_memories_config.get(name, [])
+                    if seed_items:
+                        self._seed_initial_memories(name, memory_manager, seed_items)
             except Exception as e:
                 print(f"⚠️  {name} 记忆系统初始化失败: {e}")
                 print(f"   {name} 仍可对话，但短期/长期记忆功能受限")
@@ -222,7 +186,52 @@ class NPCAgentManager:
             )
             print(f"  💾 {npc_name} 记忆: 仅工作记忆 (SQLite, {memory_dir})")
             return memory_manager
-    
+
+    def _count_stored_memories(self, memory_manager: MemoryManager) -> int:
+        total = 0
+        for memory_type in ("working", "episodic"):
+            memory_instance = memory_manager.memory_types.get(memory_type)
+            if memory_instance and hasattr(memory_instance, "get_all"):
+                total += len(memory_instance.get_all())
+        return total
+
+    def _seed_initial_memories(
+        self,
+        npc_name: str,
+        memory_manager: MemoryManager,
+        items: List[InitialMemoryItem],
+    ) -> None:
+        force_reseed = os.environ.get("NPC_MEMORY_FORCE_RESEED", "").strip() in (
+            "1", "true", "yes",
+        )
+        existing = self._count_stored_memories(memory_manager)
+
+        if existing > 0 and not force_reseed:
+            print(f"  💾 {npc_name} 已有 {existing} 条记忆，跳过配置种子")
+            return
+
+        if existing > 0 and force_reseed:
+            for mem_type in ("working", "episodic"):
+                try:
+                    memory_manager.clear_memory_type(mem_type)
+                except Exception:
+                    pass
+            print(f"  💾 {npc_name} 已清空记忆 (NPC_MEMORY_FORCE_RESEED)")
+
+        current_time = datetime.now()
+        for item in items:
+            memory_manager.add_memory(
+                content=item.content,
+                memory_type=item.type,
+                importance=item.importance,
+                metadata={
+                    "source": "config_seed",
+                    "npc_name": npc_name,
+                    "timestamp": current_time.isoformat(),
+                },
+            )
+        print(f"  💾 {npc_name} 已写入 {len(items)} 条配置初始记忆")
+
     def chat(self, npc_name: str, message: str, player_id: str = "player") -> Dict:
         """与指定NPC对话 (支持记忆功能、好感度系统和情绪系统)
         

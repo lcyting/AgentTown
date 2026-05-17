@@ -32,9 +32,9 @@ class EmotionManager:
     - 内存态存储，重启归零
     """
 
-    def __init__(self):
-        # 存储格式: {npc_name: {player_id: emotion_key}}
+    def __init__(self, default_emotions: Optional[Dict[str, str]] = None):
         self.emotion_states: Dict[str, Dict[str, str]] = {}
+        self.default_emotions: Dict[str, str] = default_emotions or {}
         print("😊 情绪管理系统已初始化")
 
     def get_emotion(self, npc_name: str, player_id: str = "player") -> str:
@@ -51,7 +51,10 @@ class EmotionManager:
             self.emotion_states[npc_name] = {}
 
         if player_id not in self.emotion_states[npc_name]:
-            self.emotion_states[npc_name][player_id] = "neutral"
+            baseline = self.default_emotions.get(npc_name, "neutral")
+            if baseline not in EMOTIONS:
+                baseline = "neutral"
+            self.emotion_states[npc_name][player_id] = baseline
 
         return self.emotion_states[npc_name][player_id]
 

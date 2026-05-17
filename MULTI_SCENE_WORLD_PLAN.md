@@ -27,7 +27,7 @@ isProject: false
 | `world_manager.gd` AutoLoad | ✅ `transition_to(scene_id, spawn_id)` |
 | `door.gd` 三场景互联 | ✅ |
 | `world_scene.gd` 按 `scene_id` 轮询 status | ✅ |
-| 后端 `NPC_ROLES` + `scene_id` | ✅ 5 名 NPC（非 6 人；咖啡厅仅小林） |
+| 后端 `npc_config/npcs.yaml` + `scene_id` | ✅ 5 名 NPC（非 6 人；咖啡厅仅小林） |
 | `GET /npcs?scene_id=`、`GET /npcs/status?scene_id=` | ✅ |
 | `state_manager` 每场景批量生成头顶台词 | ✅ |
 | 办公室 NPC 更名程码/林案/苏绘 | ✅ |
@@ -80,10 +80,11 @@ flowchart TB
 
 ## 后端要点
 
-- `agents.NPC_ROLES`：`scene_id`, `world_name`, `interaction_hint`
+- **`npc_config/npcs.yaml`**：角色卡、`scene_id`、`world_name`、`baselines`、`initial_memories`、`ambient_dialogues`
+- `npc_config_loader.get_npc_roles()` → `agents.NPC_ROLES`（启动时加载）
 - `npc_names_for_scene(scene_id)`、`list_npcs(scene_id)`
-- `batch_generator.generate_batch_dialogues(scene_id=...)`
-- `create_system_prompt` 使用 `world_name` 而非写死「Datawhale 办公室」
+- `batch_generator.generate_batch_dialogues(scene_id=...)`，预设台词来自 YAML `ambient_dialogues`
+- `create_system_prompt` 使用 YAML 中的 `world_name` 等字段
 
 ---
 
@@ -131,8 +132,8 @@ sequenceDiagram
 ## 风险与后续
 
 - 墙体仍为手工 `StaticBody2D` / JSON 碰撞
-- Godot `npc_name` 与 `NPC_ROLES` 键名必须一致
-- 若加第四场景（如公园）：需新素材 + `SCENE_IDS` + 后端角色 + batch 预设
+- Godot `npc_name` 与 `npcs.yaml` 中 `npcs` 键名必须一致
+- 若加第四场景（如公园）：需新素材 + `SCENE_IDS` + YAML 新 NPC + `ambient_dialogues` 四时段
 - 若需图书馆上下层：可新增楼层传送脚本并挂入 `library.tscn`（`Spawn_library_upper/lower`）
 
 ---
@@ -145,4 +146,4 @@ sequenceDiagram
 | 场景脚本 | `scripts/world_scene.gd` |
 | 门 | `scripts/door.gd`, `scenes/door.tscn` |
 | 场景 | `scenes/office.tscn`, `cafe.tscn`, `library.tscn` |
-| 后端 | `backend/agents.py`, `batch_generator.py`, `state_manager.py`, `main.py` |
+| 后端 | `backend/npc_config/npcs.yaml`, `npc_config_loader.py`, `agents.py`, `batch_generator.py`, `state_manager.py`, `main.py` |

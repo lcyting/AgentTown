@@ -17,6 +17,7 @@
 |------|------|
 | **多场景世界** | 办公室、咖啡厅、图书馆；`WorldManager` + 传送门切换场景 |
 | **5 名 AI NPC** | 程码、林案、苏绘（办公室）；小林（咖啡厅）；陈读（图书馆） |
+| **YAML 行为配置** | 人格、初始记忆、情绪/好感基线、环境台词均在 `backend/npc_config/npcs.yaml`，非技术人员可编辑 |
 | **智能对话** | FastAPI + HelloAgents `SimpleAgent`；无 API Key 时降级为预设/模拟回复 |
 | **记忆系统** | 工作记忆 + 可选情景向量记忆（Qdrant）；详见 [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md) |
 | **好感度** | 5 个关系等级，影响对话风格；与情绪同次 LLM 分析，节省调用 |
@@ -47,6 +48,9 @@
 AgentTown/
 ├── backend/                 # FastAPI 后端（AI 依赖 pip 包 hello-agents）
 │   ├── main.py              # 入口与路由
+│   ├── npc_config/
+│   │   └── npcs.yaml        # NPC 人格、记忆种子、基线、环境台词
+│   ├── npc_config_loader.py
 │   ├── agents.py            # NPC 与对话逻辑
 │   ├── relationship_manager.py
 │   ├── emotion_manager.py
@@ -127,6 +131,10 @@ python main.py
 
 场景间通过门（`door.tscn`）传送；客户端按当前场景轮询 `GET /npcs/status?scene_id=...`。
 
+### 调整 NPC 行为（无需改代码）
+
+编辑 [`backend/npc_config/npcs.yaml`](backend/npc_config/npcs.yaml)（参考 [`npcs.example.yaml`](backend/npc_config/npcs.example.yaml)），修改性格、开局记忆、默认情绪/好感、头顶预设台词后**重启后端**。详见 [backend/README.md#npc-行为配置yaml](backend/README.md)。
+
 ## 架构概览
 
 ```mermaid
@@ -174,7 +182,7 @@ cd backend
 python -m pytest tests/ -v
 ```
 
-覆盖：情绪管理器、情绪 API（mock）、好感度/情绪 JSON 解析。也可在浏览器中使用 Swagger 进行手动联调。
+覆盖：情绪管理器、情绪 API（mock）、好感度/情绪 JSON 解析、NPC YAML 配置加载。也可在浏览器中使用 Swagger 进行手动联调。
 
 ## 常见问题
 
@@ -185,7 +193,10 @@ python -m pytest tests/ -v
 检查后端是否在运行，以及 `config.gd` 中的 `API_BASE_URL` 是否与后端地址一致。
 
 **重启后好感/情绪归零？**  
-当前好感度与情绪保存在内存中，服务重启会重置；记忆是否持久化取决于工作记忆/情景记忆配置，见 [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md)。
+运行时好感/情绪保存在内存中，重启后按 YAML `baselines` 恢复默认；记忆是否持久化见 [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md)。
+
+**如何改 NPC 性格或开局记忆？**  
+编辑 `backend/npc_config/npcs.yaml` 并重启后端；改 `initial_memories` 后需清空该 NPC 记忆目录或调用 `DELETE /npcs/{名}/memories`。
 
 ## 致谢
 

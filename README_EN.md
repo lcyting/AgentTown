@@ -17,6 +17,7 @@ A **personal fork and extension** of the Cyber Town demo from [Hello-agents](htt
 |--------|-------------|
 | **Multi-scene world** | Office, café, library; `WorldManager` + doors for scene transitions |
 | **5 AI NPCs** | Cheng Ma, Lin An, Su Hui (office); Xiao Lin (café); Chen Du (library) |
+| **YAML behavior config** | Personality, seed memories, emotion/affinity baselines, ambient lines in `backend/npc_config/npcs.yaml` |
 | **Smart dialogue** | FastAPI + HelloAgents `SimpleAgent`; falls back to canned/mock replies without an API key |
 | **Memory** | Working memory + optional episodic vector memory (Qdrant) — see [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md) |
 | **Affinity** | 5 relationship tiers affecting reply style; analyzed in the same LLM call as emotion |
@@ -47,6 +48,8 @@ A **personal fork and extension** of the Cyber Town demo from [Hello-agents](htt
 AgentTown/
 ├── backend/                 # FastAPI server (hello-agents via pip)
 │   ├── main.py
+│   ├── npc_config/npcs.yaml # NPC personality, memories, baselines, ambient dialogues
+│   ├── npc_config_loader.py
 │   ├── agents.py
 │   ├── relationship_manager.py
 │   ├── emotion_manager.py
@@ -125,6 +128,10 @@ python main.py
 
 Use doors (`door.tscn`) to travel between scenes. The client polls `GET /npcs/status?scene_id=...` for the active scene.
 
+### Tuning NPC behavior (no code changes)
+
+Edit [`backend/npc_config/npcs.yaml`](backend/npc_config/npcs.yaml) (see [`npcs.example.yaml`](backend/npc_config/npcs.example.yaml)), then **restart the backend**. Details: [backend/README.md](backend/README.md).
+
 ## Architecture
 
 ```mermaid
@@ -172,7 +179,7 @@ cd backend
 python -m pytest tests/ -v
 ```
 
-Covers emotion manager, emotion API (mock), and affinity/emotion JSON parsing. Use Swagger at http://localhost:8000/docs for manual API tests.
+Covers emotion manager, emotion API (mock), affinity/emotion JSON parsing, and NPC YAML config loading. Use Swagger at http://localhost:8000/docs for manual API tests.
 
 ## FAQ
 
@@ -183,7 +190,10 @@ Use Python 3.10+, activate the venv, and run `pip install -r requirements.txt`.
 Confirm the backend is up and `API_BASE_URL` in `config.gd` points to it.
 
 **Affinity/emotion reset after restart?**  
-They are stored in memory only for now. Persistence rules for memories depend on working/episodic config — see [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md).
+In-session changes are in-memory only; after restart, **defaults** come from `npcs.yaml` `baselines`. Memory persistence — see [MEMORY_SYSTEM_GUIDE.md](MEMORY_SYSTEM_GUIDE.md).
+
+**Change NPC personality or seed memories?**  
+Edit `backend/npc_config/npcs.yaml` and restart; for `initial_memories`, clear `memory_data/{name}/` or `DELETE /npcs/{name}/memories` first.
 
 ## Acknowledgments
 

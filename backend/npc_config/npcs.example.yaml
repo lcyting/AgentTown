@@ -1,0 +1,41 @@
+# NPC 行为配置模板（复制为 npcs.yaml 后修改）
+# 修改后需重启后端服务 (uvicorn) 才能生效
+#
+# --- 字段说明 ---
+# personality / style / hobbies / expertise : 影响对话语气与人设，非技术人员可直接改文案
+# baselines.emotion : happy | sad | angry | excited | neutral（首次见面默认情绪）
+# baselines.affinity : 0-100（首次见面默认好感度）
+# initial_memories : NPC 开局「记得的事」；改完后需清空 memory_data/{NPC名}/ 或 DELETE /npcs/{名}/memories 才会重新写入
+# ambient_dialogues : LLM 不可用时的头顶气泡台词，按 morning/noon/afternoon/evening 分时段
+
+version: 1
+
+npcs:
+  示例角色:
+    scene_id: office
+    world_name: 赛博小镇办公室
+    title: 示例职位
+    location: 示例位置
+    activity: 示例活动
+    interaction_hint: 按 E 交互
+    personality: 性格描述,用逗号分隔多个特点
+    expertise: 专长1、专长2
+    style: 说话风格描述
+    hobbies: 爱好描述
+    baselines:
+      emotion: neutral
+      affinity: 50
+    initial_memories:
+      - content: 一条开局记忆,会写入情景/工作记忆
+        type: episodic
+        importance: 0.5
+
+ambient_dialogues:
+  morning:
+    示例角色: 早上好!这是预设的头顶台词。
+  noon:
+    示例角色: 中午的预设台词。
+  afternoon:
+    示例角色: 下午的预设台词。
+  evening:
+    示例角色: 傍晚的预设台词。

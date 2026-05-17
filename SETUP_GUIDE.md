@@ -85,6 +85,32 @@ QDRANT_API_KEY=xxxxx
 
 `NPC_UPDATE_INTERVAL` 在 `config.py` 中默认为 **30** 秒，一般无需写入 `.env`。
 
+可选（NPC 行为配置）：
+
+```env
+# 自定义 YAML 路径（默认 backend/npc_config/npcs.yaml）
+# NPC_CONFIG_PATH=D:/path/to/npcs.yaml
+
+# 开发时强制用 YAML 重写初始记忆（会先清空 working/episodic）
+# NPC_MEMORY_FORCE_RESEED=1
+```
+
+### 步骤 4.5：自定义 NPC 行为（可选）
+
+无需编程即可调整 NPC：
+
+1. 用文本编辑器打开 `backend/npc_config/npcs.yaml`（对照 `npcs.example.yaml` 中的注释）
+2. 修改 `personality`、`style`、`initial_memories`、`baselines`、`ambient_dialogues` 等
+3. **重启后端**（`python main.py`）
+
+| 修改项 | 额外操作 |
+|--------|----------|
+| 性格 / 环境台词 | 重启即可 |
+| `initial_memories` | 清空 `backend/memory_data/{NPC名}/` 或 `DELETE /npcs/{名}/memories`，再重启 |
+| `baselines` | 重启后对新对话会话生效 |
+
+新增 NPC 时：在 YAML 添加 `npcs` 条目 + 四时段 `ambient_dialogues`，在 Godot 放置 `npc.tscn` 并设置 `npc_name` 与 YAML 键名一致。详见 [backend/README.md](backend/README.md)。
+
 ### 步骤 5：启动后端
 
 ```bash
@@ -127,7 +153,7 @@ cd backend
 python -m pytest tests/ -v
 ```
 
-覆盖：情绪管理器、情绪 API（mock）、好感度分析 JSON 解析。
+覆盖：情绪管理器、情绪 API（mock）、好感度分析 JSON 解析、NPC YAML 配置加载。
 
 ### API 文档
 
@@ -166,7 +192,13 @@ python view_logs.py list    # 列出所有日志文件
 
 ### Q5：好感度 / 情绪重启后归零？
 
-当前实现为**内存存储**，服务重启后重置；记忆文件目录可保留。
+运行时数值在内存中，**服务重启后**会按 `npc_config/npcs.yaml` 里 `baselines` 恢复默认（如好感 50、情绪 neutral）；与玩家当次会话中已变化的值无关。记忆文件目录可单独保留。
+
+### Q6：修改了 npcs.yaml 不生效？
+
+1. 确认已**重启后端**（不支持热重载）  
+2. 改 `initial_memories` 时需清空该 NPC 记忆后再启动  
+3. 启动失败时查看终端中文校验错误，对照 `npcs.example.yaml`
 
 ## 开始体验
 
