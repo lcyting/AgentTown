@@ -1,0 +1,110 @@
+{
+  "version": 2,
+  "scene_id": "library",
+  "preview": "res://assets/interiors/Library_1_preview_1280x720.png",
+  "npc_position": [
+    280,
+    200
+  ],
+  "collisions": [
+    {
+      "name": "wall_top",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1280,
+        80
+      ]
+    },
+    {
+      "name": "wall_left",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        80,
+        720
+      ]
+    },
+    {
+      "name": "wall_right",
+      "pos": [
+        1200,
+        0
+      ],
+      "size": [
+        80,
+        720
+      ]
+    },
+    {
+      "name": "desk_zone",
+      "pos": [
+        480,
+        300
+      ],
+      "size": [
+        320,
+        140
+      ]
+    },
+    {
+      "name": "door_left",
+      "pos": [
+        0,
+        520
+      ],
+      "size": [
+        220,
+        200
+      ]
+    },
+    {
+      "name": "door_right",
+      "pos": [
+        1060,
+        520
+      ],
+      "size": [
+        220,
+        200
+      ]
+    },
+    {
+      "name": "wall_mid_upper",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        328,
+        128
+      ]
+    },
+    {
+      "name": "wall_mid_right",
+      "pos": [
+        210,
+        178
+      ],
+      "size": [
+        574,
+        118
+      ]
+    },
+    {
+      "name": "wall_mid_far_right",
+      "pos": [
+        904,
+        182
+      ],
+      "size": [
+        248,
+        116
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+# FastAPI后端依赖
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+requests>=2.31.0
+
+# CORS支持
+python-multipart>=0.0.6
+
+# 环境变量
+python-dotenv>=1.0.0
+
+# 测试工具
+pytest>=7.4.0
+httpx>=0.25.0
+
+# HelloAgents框架
+hello-agents>=0.2.4,<=0.2.9
+# hello_agents 导入时会加载 evaluation 模块，需要此依赖
+huggingface_hub>=0.20.0
+
+# NPC 情景记忆（向量检索）依赖
+qdrant-client>=1.6.0
+sentence-transformers>=2.2.0

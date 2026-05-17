@@ -1,0 +1,111 @@
+[gd_scene format=3 uid="uid://cqpml6gkmxc7"]
+
+[ext_resource type="Script" uid="uid://4u7kbmv437tc" path="res://scripts/world_scene.gd" id="1_world"]
+[ext_resource type="PackedScene" uid="uid://pv10xtygo0sg" path="res://scenes/door.tscn" id="2_door"]
+[ext_resource type="PackedScene" uid="uid://dob8a2h4f6gt8" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://dxcvuxgvdsx7" path="res://scenes/npc.tscn" id="4_npc"]
+[ext_resource type="PackedScene" uid="uid://cm0yi2d074t64" path="res://scenes/dialogue_ui.tscn" id="5_dialogue"]
+[ext_resource type="Script" uid="uid://mlimc1lrsr5a" path="res://scripts/room_collisions.gd" id="6_collisions"]
+[ext_resource type="AudioStream" uid="uid://brhbet2ll8icy" path="res://assets/audio/BGM.ogg" id="7_bgm"]
+[ext_resource type="Texture2D" uid="uid://hur85xo1v11n" path="res://assets/interiors/Cafe_1_preview_1280x720.png" id="8_bg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
+size = Vector2(1280, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom"]
+size = Vector2(1280, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_side"]
+size = Vector2(24, 720)
+
+[node name="Cafe" type="Node2D" unique_id=1228584219]
+script = ExtResource("1_world")
+scene_id = "cafe"
+
+[node name="Background" type="Sprite2D" parent="." unique_id=248062492]
+z_index = -100
+position = Vector2(640, 360)
+texture = ExtResource("8_bg")
+
+[node name="RoomCollisions" type="Node2D" parent="." unique_id=66505035]
+script = ExtResource("6_collisions")
+layout_file = "res://assets/room_layouts/cafe.json"
+
+[node name="Player" parent="." unique_id=1852427877 instance=ExtResource("3_player")]
+position = Vector2(640, 520)
+
+[node name="NPCs" type="Node2D" parent="." unique_id=1040943495]
+
+[node name="NPC_Xiaolin" parent="NPCs" unique_id=1448359945 instance=ExtResource("4_npc")]
+position = Vector2(640, 320)
+npc_name = "小林"
+npc_title = "咖啡师"
+interaction_hint_text = "按 E 点一杯咖啡"
+move_speed = 30.0
+wander_range = 48.0
+
+[node name="DialogueUI" parent="." unique_id=1616999697 instance=ExtResource("5_dialogue")]
+
+[node name="Walls" type="Node2D" parent="." unique_id=1503518822]
+
+[node name="TopWall" type="StaticBody2D" parent="Walls" unique_id=1159238038]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/TopWall" unique_id=1579263716]
+position = Vector2(640, 12)
+shape = SubResource("RectangleShape2D_top")
+
+[node name="BottomWall" type="StaticBody2D" parent="Walls" unique_id=1864685371]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/BottomWall" unique_id=1216733364]
+position = Vector2(640, 708)
+shape = SubResource("RectangleShape2D_bottom")
+
+[node name="LeftWall" type="StaticBody2D" parent="Walls" unique_id=2054242025]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/LeftWall" unique_id=1039641238]
+position = Vector2(12, 360)
+shape = SubResource("RectangleShape2D_side")
+
+[node name="RightWall" type="StaticBody2D" parent="Walls" unique_id=1098359445]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/RightWall" unique_id=1343666694]
+position = Vector2(1268, 360)
+shape = SubResource("RectangleShape2D_side")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=595136118]
+
+[node name="SceneNameLabel" type="Label" parent="UI" unique_id=240331934]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 360.0
+offset_bottom = 44.0
+theme_override_font_sizes/font_size = 20
+text = "赛博小镇 · 咖啡厅"
+
+[node name="Spawns" type="Node2D" parent="." unique_id=410406470]
+
+[node name="Spawn_default" type="Marker2D" parent="Spawns" unique_id=2030315774]
+position = Vector2(640, 520)
+
+[node name="Spawn_from_office" type="Marker2D" parent="Spawns" unique_id=992151914]
+position = Vector2(516, 478)
+
+[node name="Spawn_from_library" type="Marker2D" parent="Spawns" unique_id=1978181441]
+position = Vector2(1097, 485)
+
+[node name="Doors" type="Node2D" parent="." unique_id=179897298]
+
+[node name="DoorToOffice" parent="Doors" unique_id=1527669367 instance=ExtResource("2_door")]
+position = Vector2(520, 484)
+target_scene_id = "office"
+spawn_id = "Spawn_from_cafe"
+
+[node name="DoorToLibrary" parent="Doors" unique_id=295895162 instance=ExtResource("2_door")]
+position = Vector2(1093, 492)
+target_scene_id = "library"
+spawn_id = "Spawn_from_cafe"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1378414552]
+stream = ExtResource("7_bgm")
+volume_db = -6.679
+autoplay = true

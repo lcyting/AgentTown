@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "scene_id": "cafe",
+  "preview": "res://assets/interiors/Cafe_1_preview_1280x720.png",
+  "npc_position": [
+    640,
+    320
+  ],
+  "collisions": [
+    {
+      "name": "wall_top",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        1280,
+        80
+      ]
+    },
+    {
+      "name": "wall_left",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        80,
+        720
+      ]
+    },
+    {
+      "name": "wall_right",
+      "pos": [
+        1200,
+        0
+      ],
+      "size": [
+        80,
+        720
+      ]
+    },
+    {
+      "name": "table_zone",
+      "pos": [
+        280,
+        200
+      ],
+      "size": [
+        320,
+        200
+      ]
+    },
+    {
+      "name": "door_left",
+      "pos": [
+        0,
+        560
+      ],
+      "size": [
+        220,
+        160
+      ]
+    },
+    {
+      "name": "door_right",
+      "pos": [
+        1060,
+        560
+      ],
+      "size": [
+        220,
+        160
+      ]
+    }
+  ]
+}

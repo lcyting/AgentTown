@@ -1,0 +1,75 @@
+# =============================================================================
+# 赛博小镇 · GitHub 提交忽略规则
+# =============================================================================
+
+# --- 密钥与环境（保留 .env.example）---
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# --- Python 后端 ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+
+backend/venv/
+backend/.venv/
+.venv/
+venv/
+env/
+
+backend/.pytest_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.ruff_cache/
+.mypy_cache/
+
+# 运行时生成（含 NPC 记忆与对话日志，可能含隐私）
+backend/memory_data/
+backend/logs/
+*.log
+
+# --- Godot 客户端 ---
+.godot/
+**/.godot/
+*.translation
+export/
+export_presets.cfg
+
+# 工具脚本临时预览产物
+helloagents-ai-town/tools/_preview_probe/
+
+# --- 操作系统 ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- 编辑器 / IDE ---
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# --- 杂项 ---
+*.bak
+*.tmp
+.cache/
+
+# Cursor / Sisyphus 代理会话元数据（非项目代码）
+.sisyphus/

@@ -1,0 +1,6 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# 开发工具临时文件
+tools/_preview_probe/
